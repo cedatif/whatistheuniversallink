@@ -1,9 +1,14 @@
 <template>
-  <div v-if="searchedItem" class="bg-gray-900 mt-4 rounded-sm text-gray-50">
+  <div v-if="searchedItem"
+       class="bg-gray-900 mt-4 rounded-sm text-gray-50"
+       @keyup.up="test"
+  >
     <div
         v-for="(item, index) in items"
+        :ref="`item-${index}`"
         :key="`item-${index}`"
         class="px-2 pt-2 last:pb-2 hover:bg-gray-600"
+        :class="{'bg-gray-600': isActive(index)}"
         @click="openItem(item)"
     >
       <div class="grid grid-cols-a-1-a items-center px-1">
@@ -22,6 +27,13 @@
 </template>
 
 <script>
+/**
+ *     <autocomplete-result
+ :searched-item="searchedApp"
+ v-model:selectedItem="selectedItem"
+ v-if="searchedApp.length >= 3 && !selectedItem.name">
+ </autocomplete-result>
+ */
 import schemes from '../assets/json/schemes.json'
 export default {
   name: 'AutocompleteResult',
@@ -29,6 +41,10 @@ export default {
     searchedItem: {
       type: String,
       default: '',
+    },
+    selectedItemIndex: {
+      type: Number,
+        default: -1
     },
   },
   methods: {
@@ -43,11 +59,17 @@ export default {
     openItem(selectedItem) {
       this.$emit('update:selectedItem', selectedItem);
     },
+    isActive: function (index){
+      return index === this.selectedItemIndex
+    },
+    test: function () {
+      console.log('up')
+    }
   },
   computed: {
     items: function() {
       return this.getItems(this.searchedItem);
-    },
+    }
   },
 };
 </script>

@@ -1,36 +1,57 @@
 <template>
-  <div>
-    <div class="relative mx-auto text-gray-600">
-    <span class="absolute inset-y-0 left-0 flex items-center pl-2">
-      <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1" viewBox="0 0 24 24" class="w-6 h-6 text-indigo-800"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+    <div>
+    <span class="absolute mt-2.5 ml-4 text-purple-lighter">
+      <icone-loupe />
     </span>
       <input type="search"
              v-model="searchedApp"
-             @click="reset"
+             @input="getItems"
+             @keydown.down="onArrowDown"
+             @keydown.up="onArrowUp"
+             @keydown.enter="openItem"
              name="search"
              class="border-none bg-gray-50 dark:bg-white h-10 rounded-sm w-full p-2 pl-12 text-xl focus:outline-none"
              autocomplete="on"
              placeholder="Application name">
-    </div>
-    <autocomplete-result
-        :searched-item="searchedApp"
-        v-model:selectedItem="selectedItem"
-        v-if="searchedApp.length >= 3 && !selectedItem.name">
-    </autocomplete-result>
-    <app-detail v-if="searchedApp.length >= 3 && selectedItem.name" :item="selectedItem"></app-detail>
-  </div>
 
+    <div v-if="filteredData.length > 0 && !selectedItem"
+         class="bg-gray-900 mt-4 rounded-sm text-gray-50"
+    >
+      <div
+          v-for="(item, index) in filteredData"
+          :ref="`item-${index}`"
+          :key="`item-${index}`"
+          class="px-2 pt-2 last:pb-2 hover:bg-gray-600"
+          :class="{'bg-gray-600': isActive(index)}"
+          @click="selectedItem = item"
+      >
+        <div class="grid grid-cols-a-1-a items-center px-1">
+          <span class="w-14 p-1" v-html="item.svgIcon"></span>
+          <div class="m-1">
+            <p>{{ item.name }}</p>
+            <p class="text-gray-400 text-sm">{{ item.desc }}</p>
+          </div>
+          <div class="text-gray-500">
+            <p>{{ item.platform }}</p>
+          </div>
+        </div>
+        <hr v-if="index !== (filteredData.length -1)" class="border-0 bg-gray-50 bg-opacity-10 h-1px w-97 mx-auto mt-2">
+      </div>
+    </div>
+    <app-detail v-if="selectedItem" :item="selectedItem"></app-detail>
+    </div>
 </template>
 
 <script>
-import AutocompleteResult from '../components/AutocompleteResult.vue'
 import AppDetail from './AppDetail.vue'
+import schemes from '../assets/json/schemes.json'
+import IconeLoupe from './commons/icone-loupe.vue'
 
 export default {
   name: 'SearchForm',
   components: {
+    IconeLoupe,
     AppDetail,
-    AutocompleteResult,
   },
   props: {
     item: Object,
@@ -40,13 +61,40 @@ export default {
       items: [],
       searchedApp: '',
       filteredData: [],
-      selectedItem: {},
+      selectedItem: false,
+      selectedItemIndex: -1
     };
   },
   methods: {
-    reset() {
-      this.selectedItem = {};
-      this.searchedApp = '';
+    getItems() {
+      this.selectedItem = false
+      this.filteredData =  this.searchedApp.length >= 3 ? this.filterByValue(schemes, this.searchedApp) : [];
+    },
+    filterByValue(array, string) {
+      return array.filter((app) => {
+        return app.name.toLowerCase().includes(string.toLowerCase());
+      });
+    },
+    onArrowDown: function (e) {
+      if (this.selectedItemIndex < (this.filteredData.length - 1) ) {
+        this.selectedItemIndex = this.selectedItemIndex + 1;
+      }
+      this.searchedApp = this.filteredData[this.selectedItemIndex].name
+    },
+    onArrowUp() {
+      if (this.selectedItemIndex > 0) {
+        this.selectedItemIndex = this.selectedItemIndex - 1;
+      }
+      this.searchedApp = this.filteredData[this.selectedItemIndex].name
+
+    },
+    isActive: function (index){
+      return index === this.selectedItemIndex
+    },
+    openItem() {
+      this.selectedItem = this.filteredData[this.selectedItemIndex]
+      this.filteredData = []
+      this.selectedItemIndex = -1
     },
   },
 };
